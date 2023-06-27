@@ -67,6 +67,6 @@ class ZPDES():
         
     def choose_action(self):
         
-        rewards = self.activated_exs + self.reward
-        probas = torch.nn.Softmax(dim=0)(100*rewards).numpy()
+        rewards = 3 * self.activated_exs + self.reward
+        probas = torch.nn.Softmax(dim=0)(rewards).numpy()
         return np.random.choice(np.arange(self.n_ex), p=probas)
