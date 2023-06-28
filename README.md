@@ -113,7 +113,7 @@ plt.show()
     
 
 
-## 2. Training the model on the observed data
+## 2. Training the KT models on the observed data
 
 
 ```python
@@ -301,12 +301,8 @@ test_aucs = torch.zeros(iterations)
 # Data KC-exercise graph
 data_ex_graph = pk.load(open('data/synthetic_data.pk', 'rb'))[1]
 
-# Initial estimate of the KC graph
-kc_gamma = torch.randn(n_kc, n_kc)
-
 # Model instantiation
 skt = SKT(n_ex, n_kc, data_ex_graph, d_e=16, d_c=16, d_h=16)
-skt.kc_gamma = torch.nn.Parameter(kc_gamma)
 
 # Prepare data
 train_x, train_y, test_x, test_y = SKT.prepare_data('data/synthetic_data.pk')
@@ -345,7 +341,7 @@ for i in tqdm(range(iterations)):
             break
 
         loss = torch.nn.BCELoss()(pred_y, batch_y)
-        loss = loss + 1e-2 * torch.mean(torch.abs(torch.sigmoid(skt.kc_gamma)))
+        loss = loss + 1e-2 * torch.mean(torch.abs(torch.sigmoid(skt.skt_cell.kc_gamma)))
         loss.backward()
         opt.step()
 
@@ -387,10 +383,14 @@ best_skt = pk.load(open('results/best_skt_temp.pk', 'rb'))
 ```
 
 
+      0%|          | 0/200 [00:00<?, ?it/s]
+
+
+
 ```python
 from utils import clean_graph
 pkt_graph = (clean_graph(torch.sigmoid(pkt.kc_gamma).detach())>0.1).float().T
-skt_graph = (clean_graph(torch.sigmoid(best_skt.kc_gamma).detach())>0.1).float()
+skt_graph = (clean_graph(torch.sigmoid(best_skt.skt_cell.kc_gamma).detach())>0.5).float()
 data_kc_graph = pk.load(open('data/synthetic_data.pk', 'rb'))[0]
 ```
 
@@ -413,6 +413,12 @@ axes[2].set_title('SKT-L')
 plt.tight_layout()
 plt.show()
 ```
+
+
+    
+![png](README_files/README_19_0.png)
+    
+
 
 ## 3. Tutoring models
 
@@ -476,28 +482,40 @@ skt_l_results = simulate_ZPDES_with_synthetic_students(ground_truth_sm, skt_grap
 ```
 
 
+      0%|          | 0/300 [00:00<?, ?it/s]
+
+
+
+      0%|          | 0/300 [00:00<?, ?it/s]
+
+
+
+      0%|          | 0/300 [00:00<?, ?it/s]
+
+
+
 ```python
 # Create the figure and subplots
 fig, axes = plt.subplots(1, 3, figsize=(16, 3))
 
-im=axes[0].imshow(torch.mean(gt_l_results[0], axis=1).T[:, ::10], cmap='magma', vmin=1000, vmax=2500)
+im=axes[0].imshow(torch.mean(gt_l_results[0], axis=1).T[:, ::20], cmap='magma', vmin=1000, vmax=2500)
 axes[0].set_title('Ground-truth graph')
-axes[0].set_xticks(np.arange(0, 20, 2))
-axes[0].set_xticklabels(np.arange(0, 200, 20))
+axes[0].set_xticks(np.arange(0, 15, 3))
+axes[0].set_xticklabels(np.arange(0, 300, 60))
 axes[0].set_xlabel('Time')
 axes[0].set_ylabel('KC')
 
-axes[1].imshow(torch.mean(pkt_l_results[0], axis=1).T[:, ::10], cmap='magma', vmin=1000, vmax=2500)
+axes[1].imshow(torch.mean(pkt_l_results[0], axis=1).T[:, ::20], cmap='magma', vmin=1000, vmax=2500)
 axes[1].set_title('PKT-L')
-axes[1].set_xticks(np.arange(0, 20, 2))
-axes[1].set_xticklabels(np.arange(0, 200, 20))
+axes[1].set_xticks(np.arange(0, 15, 3))
+axes[1].set_xticklabels(np.arange(0, 300, 60))
 axes[1].set_xlabel('Time')
 axes[1].set_ylabel('KC')
 
-axes[2].imshow(torch.mean(skt_l_results[0], axis=1).T[:, ::10], cmap='magma', vmin=1000, vmax=2500)
+axes[2].imshow(torch.mean(skt_l_results[0], axis=1).T[:, ::20], cmap='magma', vmin=1000, vmax=2500)
 axes[2].set_title('SKT-L')
-axes[2].set_xticks(np.arange(0, 20, 2))
-axes[2].set_xticklabels(np.arange(0, 200, 20))
+axes[2].set_xticks(np.arange(0, 15, 3))
+axes[2].set_xticklabels(np.arange(0, 300, 60))
 axes[2].set_xlabel('Time')
 axes[2].set_ylabel('KC')
 
@@ -506,6 +524,12 @@ fig.colorbar(im, ax=axes)
 # Adjust the layout and display the figure
 plt.show()
 ```
+
+
+    
+![png](README_files/README_24_0.png)
+    
+
 
 ### 3.2. MBT
 
@@ -564,28 +588,40 @@ skt_results = simulate_MBT_with_synthetic_students(ground_truth_sm, SKTWrapper(b
 ```
 
 
+      0%|          | 0/300 [00:00<?, ?it/s]
+
+
+
+      0%|          | 0/300 [00:00<?, ?it/s]
+
+
+
+      0%|          | 0/300 [00:00<?, ?it/s]
+
+
+
 ```python
 # Create the figure and subplots
 fig, axes = plt.subplots(1, 3, figsize=(16, 3))
 
-im=axes[0].imshow(torch.mean(pkt_results, axis=1).T[:, ::10], cmap='magma', vmin=1000, vmax=2500)
+im=axes[0].imshow(torch.mean(pkt_results, axis=1).T[:, ::20], cmap='magma', vmin=1000, vmax=2500)
 axes[0].set_title('PKT')
-axes[0].set_xticks(np.arange(0, 20, 2))
-axes[0].set_xticklabels(np.arange(0, 200, 20))
+axes[0].set_xticks(np.arange(0, 15, 3))
+axes[0].set_xticklabels(np.arange(0, 300, 60))
 axes[0].set_xlabel('Time')
 axes[0].set_ylabel('KC')
 
-axes[1].imshow(torch.mean(dkt_results, axis=1).T[:, ::10], cmap='magma', vmin=1000, vmax=2500)
+axes[1].imshow(torch.mean(dkt_results, axis=1).T[:, ::20], cmap='magma', vmin=1000, vmax=2500)
 axes[1].set_title('DKT')
-axes[1].set_xticks(np.arange(0, 20, 2))
-axes[1].set_xticklabels(np.arange(0, 200, 20))
+axes[1].set_xticks(np.arange(0, 15, 3))
+axes[1].set_xticklabels(np.arange(0, 300, 60))
 axes[1].set_xlabel('Time')
 axes[1].set_ylabel('KC')
 
-axes[2].imshow(torch.mean(skt_results, axis=1).T[:, ::10], cmap='magma', vmin=1000, vmax=2500)
+axes[2].imshow(torch.mean(skt_results, axis=1).T[:, ::20], cmap='magma', vmin=1000, vmax=2500)
 axes[2].set_title('SKT')
-axes[2].set_xticks(np.arange(0, 20, 2))
-axes[2].set_xticklabels(np.arange(0, 200, 20))
+axes[2].set_xticks(np.arange(0, 15, 3))
+axes[2].set_xticklabels(np.arange(0, 300, 60))
 axes[2].set_xlabel('Time')
 axes[2].set_ylabel('KC')
 
@@ -593,6 +629,17 @@ fig.colorbar(im, ax=axes)
 
 # Adjust the layout and display the figure
 plt.show()
+```
+
+
+    
+![png](README_files/README_29_0.png)
+    
+
+
+
+```python
+
 ```
 
 
